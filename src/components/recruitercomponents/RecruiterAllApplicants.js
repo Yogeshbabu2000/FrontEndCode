@@ -443,11 +443,15 @@ filteredData.sort((a, b) => {
 
 const handleCheckboxChange3 = (applyjobid) => {
   // Toggle the applicant's selection state
-  if (selectedApplicants.includes(applyjobid)) {
-    setSelectedApplicants(selectedApplicants.filter(id => id !== applyjobid));
-  } else {
-    setSelectedApplicants([...selectedApplicants, applyjobid]);
-  }
+  setSelectedApplicants((prevSelected) => {
+    if (prevSelected.includes(applyjobid)) {
+      // If the ID is already in the array, remove it (uncheck the box)
+      return prevSelected.filter((id) => id !== applyjobid);
+    } else {
+      // If the ID is not in the array, add it (check the box)
+      return [...prevSelected, applyjobid];
+    }
+  });
 
   // Check if all checkboxes are selected
   const allCheckboxes = document.querySelectorAll('input[type="checkbox"][name^="applicantCheckbox-"]');
@@ -1237,35 +1241,40 @@ const exportCSV = () => {
   };
  
   let allData = Array.from(tableref.current.querySelectorAll('tbody tr')).map(tr => {
-    const rowData = Array.from(tr.children).map(td=> {
+    if (!tr) return [];  
+ 
+    const rowData = Array.from(tr.children).map((td, index) => {
       const cellContent = escapeCSVField(td.textContent.trim());
-     
-      const headerRow = tr.parentElement.querySelector('thead tr');
-      if (!headerRow) return cellContent;  // Ensure headerRow is not null
  
-      const headerText = headerRow.children[Array.from(tr.children).indexOf(td)].textContent.trim();
+      const headerRow = tr.closest('table').querySelector('thead tr');
+      if (!headerRow) return cellContent;  
  
-      if (headerText === 'Name') {
-        const enameElement = td.querySelector('a') || td.querySelector('Link');
-        return enameElement ? `${escapeCSVField(enameElement.textContent.trim())}` : '';  
-      }
+      const headerText = headerRow.children[index]?.textContent.trim();
  
-      if(headerText==='Email'){
-        console.log(cellContent)
-        return cellContent;
-      }
- 
- 
-      if (headerText === 'Applicant Status') {
-        const eapplicantStatus = td.querySelector('div');
-        return eapplicantStatus ? `${escapeCSVField(eapplicantStatus.textContent.trim())}` : '';
+      switch (index) {
+        case 1:
+          const enameElement = td.querySelector('a') || td.querySelector('Link');
+          return enameElement ? `${escapeCSVField(enameElement.textContent.trim())}` : '';
+        case 2:
+          console.log(cellContent);
+          return cellContent;
+        case 3:
+          const mobileNumber = cellContent.replace(/\D/g, '');
+          return mobileNumber.length === 10 ? mobileNumber : '';
+        case 4:
+          return cellContent;
+        case 5:
+          const applicantStatus = td.querySelector('div');
+          return applicantStatus ? `${escapeCSVField(applicantStatus.textContent.trim())}` : '';
+        default:
+          break;
       }
  
       if (headerText === 'Experience') {
         return cellContent;
       }
  
-      if(headerText === 'Qualification'){
+      if (headerText === 'Qualification') {
         return cellContent;
       }
  
@@ -1275,58 +1284,22 @@ const exportCSV = () => {
         const displayedLocations = locations.length > 3
           ? `${locations.slice(0, 3).join(", ")} +`
           : locations.join(", ");
-        return escapeCSVField(displayedLocations.trim());
+        return displayedLocations.trim();
       }
  
-      if(headerText=== 'Speclization'){
+      if (headerText === 'Specialization') {
         return cellContent;
       }
  
-      if(headerText=== 'Apptitude Score'){
+      if (headerText === 'Apptitude Score') {
         return cellContent;
       }
  
-      if(headerText=== 'Technical Score'){
+      if (headerText === 'Technical Score') {
         return cellContent;
       }
  
-      if (headerText === 'Matching Skills') {
-        const matchedSkills = td.querySelectorAll('span.skill'); // Assuming skills are displayed in span elements
-        const skillsArray = Array.from(matchedSkills).map(skill => skill.textContent.trim());
-        const displayedSkills = skillsArray.length > 3
-          ? `${skillsArray.slice(0, 3).join(", ")} +`
-          : skillsArray.join(", ");
-        return escapeCSVField(displayedSkills);
-      }
- 
-      if (headerText === 'Missing Skills') {
-        const matchedSkills = td.querySelectorAll('span.skill');
-        const skillsArray = Array.from(matchedSkills).map(skill => skill.textContent.trim());
-        const displayedSkills = skillsArray.length > 3
-          ? `${skillsArray.slice(0, 3).join(", ")} +`
-          : skillsArray.join(", ");
-        return escapeCSVField(displayedSkills);
-      }      
- 
-      if (headerText === 'Additional Skills') {
-        const additionalSkills = td.querySelectorAll('span.skill');
-        const skillsArray = Array.from(additionalSkills).map(skill => skill.textContent.trim());
-        const displayedSkills = skillsArray.length > 3
-          ? `${skillsArray.slice(0, 3).join(", ")} +`
-          : skillsArray.join(", ");
-        return escapeCSVField(displayedSkills);
-      }
-     
-      if (headerText === 'Tested Skills') {
-        const testedSkills = td.querySelectorAll('span.skill');
-        const skillsArray = Array.from(testedSkills).map(skill => skill.textContent.trim());
-        const displayedSkills = skillsArray.length > 3
-          ? `${skillsArray.slice(0, 3).join(", ")} +`
-          : skillsArray.join(", ");
-        return escapeCSVField(displayedSkills);
-      }
-       
-      if(headerText==='Job Match%'){
+      if (headerText === 'Job Match%') {
         return cellContent;
       }
  
