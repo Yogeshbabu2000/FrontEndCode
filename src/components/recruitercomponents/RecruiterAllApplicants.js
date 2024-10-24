@@ -75,7 +75,31 @@ function RecruiterAllApplicants() {
   const [availableAdditonalSkillSuggestions, setAvailableAdditonalSkillSuggestions] = useState([]);
   const [availableSkillBadgesSuggestions, setAvailableSkillBadgesSuggestions] = useState([]);
   const [availablePreferedLocSuggestions, setAvailablePreferedLocSuggestions] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [FilterData, setFilterData] = useState([]);
+  const [appliedFilter,setAppliedFilter]=useState(false)
+  
+  const recordsPerPage = 10;
+  
 
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = applicants.slice(indexOfFirstRecord, indexOfLastRecord);
+  const totalPages = Math.ceil(applicants.length / recordsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prevPage => prevPage + 1);
+    }
+  };
+  
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prevPage => prevPage - 1);
+    }
+  };
+  
   const desiredOrder = [
     'New',
     'Screening',
@@ -221,8 +245,10 @@ const reset = () => {
   setErrorMessage('');
   toggleSidebar();
 };
- 
+
+  const m=new Map();
   const handleCheckboxChange2 = (applyjobid) => {
+    m.set(currentPage,applyjobid);
     setSelectedApplicants((prevSelected) => {
       if (prevSelected.includes(applyjobid)) {
         // If the ID is already in the array, remove it (uncheck the box)
@@ -236,8 +262,9 @@ const reset = () => {
   const handleSelectAll = (event) => {
     const isChecked = event.target.checked;
     if (isChecked) {
-      const allIds = applicants.map(application => application.applyjobid);
+      const allIds = currentRecords.map(application => application.applyjobid);
       setSelectedApplicants(allIds);
+      // console.log(currentRecords)
     } else {
       setSelectedApplicants([]);
     }
@@ -297,7 +324,8 @@ const reset = () => {
 
 const applyFilter = () => {
   // Apply all filters on the frontend based on the selected options
-
+  setCurrentPage(1)
+  setAppliedFilter(true)
   // Check if at least one filter is selected
   const isAnyFilterSelected = Object.values(filterOptions).some((filter) => filter);
 
@@ -338,7 +366,7 @@ const applyFilter = () => {
       
     );
   });
-
+  setFilterData(filteredData)
   console.log('Applicants before filtering:', filteredData);
 
 
@@ -470,7 +498,7 @@ const handleCheckboxChange3 = (applyjobid) => {
 const handleFilterData = (event) => {
   const isChecked = event.target.checked;
   if (isChecked) {
-    const allIds = filteredData.map(applicant => applicant.applyjobid);
+    const allIds = FilterData.map(applicant => applicant.applyjobid);
     setSelectedApplicants(allIds);
   } else {
     setSelectedApplicants([]);
@@ -481,8 +509,25 @@ const handleFilterData = (event) => {
     checkbox.checked = isChecked;
   });
 };
+const recordsPerPage = 10; 
+let currentPage = 1;
 
- 
+function handleNextPage1() {
+  const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+  if (currentPage < totalPages) {
+    currentPage += 1;
+    renderTableData();  // Call the function to render data for the new page
+  }
+}
+
+function handlePreviousPage1() {
+  if (currentPage > 1) {
+    currentPage -= 1;
+    renderTableData();  // Call the function to render data for the new page
+  }
+}
+
+function renderTableData() {
 const tableHeader=document.getElementById("tableHeader");
 tableHeader.innerHTML = `
   <th>
@@ -516,9 +561,22 @@ tableHeader.innerHTML = `
  
 const tableBody = document.getElementById("applicantTableBody");
   tableBody.innerHTML = "";
- 
- 
-  filteredData.forEach((applicant,index) => {
+  if (filteredData.length === 0) {
+    // Display "No data found" message
+    const noDataRow = document.createElement("tr");
+    noDataRow.innerHTML = `
+      <td colspan="${selectedColumns.length + 7}" style="text-align: center;">
+        No Data Found</td>
+    `;
+    tableBody.appendChild(noDataRow);
+  }else{
+  const startIndex = (currentPage - 1) * recordsPerPage;
+  const endIndex = startIndex + recordsPerPage;
+
+  const recordsToDisplay = filteredData.slice(startIndex, endIndex);
+  setFilterData(recordsToDisplay)
+  
+  recordsToDisplay.forEach((applicant,index) => {
    
     const row = document.createElement("tr");
    
@@ -558,7 +616,7 @@ const tableBody = document.getElementById("applicantTableBody");
             width: 615px;
             height: 70px;
             white-space: normal;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            box-shadow: 0px 4px 15px 0px rgba(0,0,0,0.15);
             z-index: 1000;
             overflow: hidden;
             padding-right: 50px;
@@ -687,8 +745,64 @@ const tableBody = document.getElementById("applicantTableBody");
       handleCheckboxChange3(applicant.applyjobid);
     });
     });
- 
+  }
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+      const paginationContainer = document.createElement("div");
+      paginationContainer.className = "pagination-containers";
+    
+      paginationContainer.innerHTML = `
+        <button id="prevButton" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+        <span>${currentPage}</span>
+        <button id="nextButton" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+      `;
+    
+      // Clear existing pagination
+      let existingPaginationContainer = document.querySelector(".pagination-containers");
+      if (existingPaginationContainer) {
+        existingPaginationContainer.remove();
+      }
+
+      let existsentirediv = document.querySelector(".entireDivClass");
+      if (existsentirediv) {
+        existsentirediv.remove();
+      }
+      
+      // Append new pagination controls
+      const entireDiv = document.createElement("div");
+      entireDiv.className = "entireDivClass";
+      entireDiv.appendChild(paginationContainer);
+      entireDiv.style.height = "50px";
+      entireDiv.style.display = "flex";
+      entireDiv.style.justifyContent = "flex-end"; // Align items to the right
+      entireDiv.style.alignItems = "center";
+    
+      const x = document.getElementsByClassName("profile-setting");
+      if (x[0]) {
+        x[0].appendChild(entireDiv);
+      }
+      const prevButton = document.getElementById('prevButton');
+      const nextButton = document.getElementById('nextButton');
+
+      // Ensure the elements exist before adding event listeners
+      if (prevButton) {
+          prevButton.addEventListener('click', handlePreviousPage1);
+      }
+
+      if (nextButton) {
+          nextButton.addEventListener('click', handleNextPage1);
+      }
+
+      if (filteredData.length === 0) {
+        // Optionally, you could disable the buttons or show a message
+        prevButton.disabled = true;
+        nextButton.disabled = true;
+      }
+    }
+    renderPagination();
+  }
   setCount(filteredData.length);
+  renderTableData();
 };
 
 const applyMatchType = (value, filterValue, matchType) => {
@@ -1026,14 +1140,55 @@ const handleTextFieldChange = (id, value) => {
     
         const $table= window.$(tableref.current);
           const timeoutId = setTimeout(() => {  
-           $table.DataTable().destroy();
-            $table.DataTable({responsive:true, 
-              searching: false, 
-              lengthChange: false, 
-              "info": false,
-              paging: false, 
+            if ($table.DataTable().data().length > 0) {
+              $table.DataTable().destroy();
+            }
+          
+            const dataTable = $table.DataTable({
+              responsive: true,
+              searching: false,
+              lengthChange: false,
+              info: false,
+              paging: false,
+              pageLength: 10, 
+              columnDefs: [
+                {
+                    targets: [0,7],
+                    orderable: false  
+                }
+              ]
             });
-                  }, 500);
+          
+            const pageInfo = dataTable.page.info(); 
+          
+            if (pageInfo && pageInfo.pages > 0) {
+              const totalPages = pageInfo.pages; 
+          
+              const paginationContainer = window.$('#paginationContainer');
+              paginationContainer.empty(); 
+          
+              for (let i = 0; i < totalPages; i++) {
+                const pageButton = window.$('<button>')
+                  .text(i + 1)
+                  .on('click', () => {
+                    dataTable.page(i).draw(false); 
+                  })
+                  .css({
+                    margin: '0 5px',
+                    padding: '5px 10px',
+                    cursor: 'pointer',
+                  });
+          
+                if (i === pageInfo.page) {
+                  pageButton.prop('disabled', true);
+                }
+          
+                paginationContainer.append(pageButton);
+              }
+            } else {
+              console.warn('No pages available or page info is undefined.');
+            }
+          }, 500);
          return () => {
             isMounted.current = false;
          };
@@ -1043,6 +1198,15 @@ const handleTextFieldChange = (id, value) => {
       setIsLoading(false); // Stop loading
     }
   };
+
+  useEffect(() => {
+    if (isMounted.current) {
+      fetchAllApplicants();
+    }
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
  
   useEffect(() => {
     const jwtToken = localStorage.getItem('jwtToken');
@@ -1242,6 +1406,9 @@ const exportCSV = () => {
   const capitalizedHeaders = headers.map(header => header.toUpperCase());
  
   const escapeCSVField = (field) => {
+    if (typeof field !== 'string') {
+      return ' '; 
+    }
     if (field.trim() === '') {
       return ' ';
     }
@@ -1325,11 +1492,135 @@ const exportCSV = () => {
     return rowData.slice(1);
   });
  
- 
- 
-  const selectedData = selectedApplicants.length > 0
-    ? allData.filter((row, index) => selectedApplicants.includes(applicants[index].applyjobid))
-    : allData;
+  let allData1 = applicants.map(applicant => {
+    const rowData = [];
+  
+    rowData.push(escapeCSVField(applicant.name)); // Name
+    rowData.push(escapeCSVField(applicant.email)); // Email
+    rowData.push(escapeCSVField(applicant.mobilenumber)); // Mobile Number
+    rowData.push(escapeCSVField(applicant.jobTitle)); // Job Title
+    rowData.push(escapeCSVField(applicant.applicantStatus)); // Applicant Status
+  
+    if (selectedColumns.includes('Experience')) {
+      rowData.push(escapeCSVField(applicant.experience));
+    }
+    if (selectedColumns.includes('Qualification')) {
+      rowData.push(escapeCSVField(applicant.qualification));
+    }
+  
+    if (selectedColumns.includes('Location') && applicant.preferredJobLocations) {
+      let locations = applicant.preferredJobLocations;
+    
+      if (Array.isArray(locations)) {
+        locations = locations.map(location => location.trim());
+      } else if (typeof locations === 'string') {
+        locations = locations.split(',').map(location => location.trim());
+      } else {
+        locations = [];
+      }
+    
+      const displayedLocations = locations.length > 3 
+        ? `${locations.slice(0, 3).join(", ")} +` 
+        : locations.join(", ");
+    
+      rowData.push(escapeCSVField(displayedLocations)); 
+    }
+
+    // Remove the else block that was pushing an empty string
+
+    if (selectedColumns.includes('Speclization')) {
+      rowData.push(escapeCSVField(applicant.specialization));
+    }
+    if (selectedColumns.includes('Apptitude Score')) {
+      rowData.push(applicant.apptitudeScore); 
+    }
+    if (selectedColumns.includes('Technical Score')) {
+      rowData.push(applicant.technicalScore); 
+    }
+
+    // Matching Skills
+    if (selectedColumns.includes('Matching Skills')) {
+      let matchingSkills = applicant.matchedSkills;
+
+      if (Array.isArray(matchingSkills)) {
+        matchingSkills = matchingSkills.map(skill => skill.skillName).join(', ');
+      } else {
+        matchingSkills = ''; 
+      }
+
+      rowData.push(escapeCSVField(matchingSkills)); 
+    }
+
+    // Missing Skills
+    if (selectedColumns.includes('Missing Skills')) {
+      let missingSkills = applicant.nonMatchedSkills;
+
+      if (Array.isArray(missingSkills)) {
+        missingSkills = missingSkills.map(skill => skill.skillName).join(', ');
+      } else {
+        missingSkills = ''; 
+      }
+
+      rowData.push(escapeCSVField(missingSkills)); 
+    }
+
+    // Additional Skills
+    if (selectedColumns.includes('Additional Skills')) {
+      let additionalSkills = applicant.additionalSkills;
+
+      if (Array.isArray(additionalSkills)) {
+        additionalSkills = additionalSkills.map(skill => skill.skillName).join(', ');
+      } else {
+        additionalSkills = ''; 
+      }
+
+      rowData.push(escapeCSVField(additionalSkills)); 
+    }
+
+    if (selectedColumns.includes('Tested Skills')) {
+      let testedSkills = applicant.applicantSkillBadges;
+
+      if (Array.isArray(testedSkills)) {
+        testedSkills = testedSkills.map(skill => skill.skillBadge.name).join(', '); 
+      } else {
+        testedSkills = ''; 
+      }
+
+      rowData.push(escapeCSVField(testedSkills));
+    }
+    
+    if (selectedColumns.includes('Job Match%')) {
+      rowData.push(`${applicant.matchPercentage}%`); 
+    }
+  
+    const resumeLink = `${window.location.origin}/view-resume/${applicant.id}`;
+    const hyperlinkFormula = resumeLink ? `"=HYPERLINK(""${resumeLink}"", ""View Resume"")"` : 'N/A';
+    rowData.push(hyperlinkFormula);
+
+    return rowData;
+});
+
+  // console.log(allData1)
+  
+  const selectedPages = new Set();
+  selectedApplicants.forEach(id => {
+    const pageNumber = m.get(id);
+    if (pageNumber) {
+      selectedPages.add(pageNumber);
+    }
+  });
+
+  let selectedData;
+  if (selectedPages.size > 1) {
+    // If selected data spans multiple pages, use allData
+    selectedData = allData; // or however you want to define this data
+  } else if (selectedApplicants.length > 0) {
+    // If there are selected applicants, filter based on those
+    selectedData = allData1.filter((row, index) => selectedApplicants.includes(applicants[index].applyjobid));
+  } else {
+    // Default to allData
+    selectedData = allData;
+  }
  
   selectedData.unshift(capitalizedHeaders);
  
@@ -2315,11 +2606,11 @@ const exportCSV = () => {
                     <table ref={tableref} className="responsive-table">
                       <thead id='tableHeader'>
                         <tr>
-                          <th>
+                          <th className='No'>
                             <input
                               type="checkbox"
                               onChange={handleSelectAll}
-                              checked={selectedApplicants.length === applicants.length}
+                              checked={selectedApplicants.length === currentRecords.length} 
                             />
                           </th>
                  
@@ -2381,7 +2672,7 @@ const exportCSV = () => {
                         </tr>
                       </thead>
                       <tbody id="applicantTableBody">
-                      {Array.isArray(applicants) && applicants.map((application,index) => (
+                      {Array.isArray(currentRecords) && currentRecords.map((application,index) => (
                           <tr key={application.applyjobid} style={{
                             backgroundColor: selectedApplicants.includes(application.applyjobid)
                               ? "#F6F6F6"
@@ -2425,7 +2716,7 @@ const exportCSV = () => {
           <div
             style={{
               position: 'absolute',
-              top: index === applicants.length - 1 ? '-60px' : '25px',
+              top: index === currentRecords.length - 1 ? '-60px' : '25px',
               left: '0',
               width: '600px',
               height: '62.226px',
@@ -2591,6 +2882,16 @@ const exportCSV = () => {
                         )}
                   </div>
                 </div>
+                {applicants.length > 0 && FilterData.length === 0 && !appliedFilter &&(
+                  <div className="pagination-controls">
+                  <button onClick={handlePreviousPage} disabled={currentPage === 1}>
+                    Previous
+                  </button>
+                  <span>{currentPage}</span>
+                  <button onClick={handleNextPage} disabled={currentPage === totalPages}>
+                    Next
+                  </button>
+                </div>)}
                 </div>
               </div>
             </div>
