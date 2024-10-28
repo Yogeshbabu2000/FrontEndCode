@@ -203,6 +203,7 @@ const [errorMessage, setErrorMessage] = useState('');
 const [selectedColumns, setSelectedColumns] = useState([]);
 
 const toggleSidebar = () => {
+  setErrorMessage('')
   setIsOpen(!isOpen);
 };
 
@@ -328,14 +329,70 @@ const applyFilter = () => {
   setAppliedFilter(true)
   // Check if at least one filter is selected
   const isAnyFilterSelected = Object.values(filterOptions).some((filter) => filter);
-
+  // console.log(isAnyFilterSelected)
   if (!isAnyFilterSelected) {
     // Show error message if no filter is selected
+    setErrorMessage('Please Select at least one filter')
     setShowError(true);
   } else {
-    // Apply filter logic here
-    setShowError(false);
-    // Your filter application logic
+    const selectedFilters = Object.entries(filterOptions)
+    .filter(([key, value]) => value) 
+    .reduce((acc, [key, value]) => {
+      acc[key.replace('Filter', '')] = value;
+      return acc;
+    }, {});
+    let hasError = false;
+    if ('name' in selectedFilters && !name) {
+      hasError = true;
+    }
+    if ('email' in selectedFilters && !email) {
+      hasError = true;
+    }
+    if ('mobile' in selectedFilters && !mobileNumber) {
+      hasError = true;
+    }
+    if ('job' in selectedFilters && !jobTitle) {
+      hasError = true;
+    }
+    if ('status' in selectedFilters && !applicantStatus) {
+      hasError = true;
+    }
+    if ('experience' in selectedFilters && !minimumExperience) {
+      hasError = true;
+    }
+    if ('minimumQualification' in selectedFilters && !minimumQualification) {
+      hasError = true;
+    }
+    if ('preferredJobLocations' in selectedFilters && !preferredJobLocations) {
+      hasError = true;
+    }
+    if ('specialization' in selectedFilters && !specialization) {
+      hasError = true;
+    }
+    if ('matchedSkills' in selectedFilters && !matchedSkills) {
+      hasError = true;
+    }
+    if ('matchPercentage' in selectedFilters && !matchPercentage) {
+      hasError = true;
+    }
+    if ('nonMatchedSkills' in selectedFilters && !nonMatchedSkills) {
+      hasError = true;
+    }
+    if ('additionalSkills' in selectedFilters && !additionalSkills) {
+      hasError = true;
+    }
+    if ('applicantSkillBadges' in selectedFilters && !applicantSkillBadges) {
+      hasError = true;
+    }
+  
+    // Set error message and show state based on the hasError flag
+    if (hasError) {
+      setErrorMessage('Field for selected filter is missing');
+      setShowError(true);
+    } else {
+      setErrorMessage(''); 
+      setShowError(false); 
+    }
   }
 
 
@@ -355,7 +412,7 @@ const applyFilter = () => {
       (preScreenedCondition === "" || applyScreenedMatchType(applicant.preScreenedCondition, preScreenedCondition, filterOptions.preScreenedCondition))&&
        (apptitudeScore === "" || applyScoreMatchType(applicant.apptitudeScore, apptitudeScore, filterOptions.apptitudeScore))&&
       (technicalScore === "" || applyScoreMatchType(applicant.technicalScore, technicalScore, filterOptions.technicalScore))&&
-      (technicalScore === "" || applyScoreMatchType(applicant.matchPercentage, matchPercentage, filterOptions.matchPercentage))&&
+      (matchPercentage === "" || applyScoreMatchType(applicant.matchPercentage, matchPercentage, filterOptions.matchPercentage))&&
       (matchedSkills === "" || applySkillMatchType(applicant.matchedSkills, matchedSkills, filterOptions.matchedSkills))&&
       (nonMatchedSkills === "" || applySkillMatchType(applicant.nonMatchedSkills, nonMatchedSkills, filterOptions.nonMatchedSkills))&&
       (additionalSkills === "" || applySkillMatchType(applicant.additionalSkills, additionalSkills, filterOptions.additionalSkills))&&
@@ -644,7 +701,7 @@ const tableBody = document.getElementById("applicantTableBody");
   <td><a href="/viewapplicant/${applicant.id}?jobid=${applicant.jobId}&appid=${applicant.id}" style="color: #0583D2; text-decoration: none;">${applicant.email}</a></td>
   <td><a href="/viewapplicant/${applicant.id}?jobid=${applicant.jobId}&appid=${applicant.id}" style="color: #0583D2; text-decoration: none;">${applicant.mobilenumber}</a></td>
   <td>${applicant.jobTitle}</td>
-  <td style="padding: 0px 10px; text-align: center; vertical-align: middle;">
+  <td>
     <div style="display: inline-flex; justify-content: flex-start; align-items: center; gap: 10px; border-radius: 14px; background: ${
       (() => {
         switch (applicant.applicantStatus) {
@@ -734,6 +791,7 @@ const tableBody = document.getElementById("applicantTableBody");
   ${selectedColumns.includes("Job Match%") ? `<td>${applicant.matchPercentage}%</td>` : ''}
  
   <td><a href="/view-resume/${applicant.id}" style="color: blue;">View</a></td>
+  <td></td>
 `;
  
  
@@ -1403,7 +1461,7 @@ const exportCSV = () => {
     'Resume'
   ];
  
-  const capitalizedHeaders = headers.map(header => header.toUpperCase());
+  const capitalizedHeaders = headers.map(header => header);
  
   const escapeCSVField = (field) => {
     if (typeof field !== 'string') {
@@ -1483,7 +1541,7 @@ const exportCSV = () => {
  
       if (headerText === 'Resume') {
         const resumeLink = td.querySelector('a')?.href;
-        return resumeLink ? `"=HYPERLINK(""${resumeLink}"", ""View Resume"")"` : 'N/A';
+        return resumeLink ? `"=HYPERLINK(""${resumeLink}"", ""View"")"` : 'N/A';
       }
  
       return cellContent;
@@ -1594,7 +1652,7 @@ const exportCSV = () => {
     }
   
     const resumeLink = `${window.location.origin}/view-resume/${applicant.id}`;
-    const hyperlinkFormula = resumeLink ? `"=HYPERLINK(""${resumeLink}"", ""View Resume"")"` : 'N/A';
+    const hyperlinkFormula = resumeLink ? `"=HYPERLINK(""${resumeLink}"", ""View"")"` : 'N/A';
     rowData.push(hyperlinkFormula);
 
     return rowData;
@@ -1665,15 +1723,15 @@ const exportCSV = () => {
               style={{
                 position: "absolute",
                 right: "0",
-                marginRight: "20px",
+                marginRight: "25px",
                 top: "180px",
                 marginBottom: "10px",
                 zIndex: 1,
                 padding: "10px", // Add padding for better spacing
-                border: "1px solid #ccc", // Light border color
-                borderRadius: "4px", // Rounded corner
+                // border: "1px solid #ccc", // Light border color
+                borderRadius: "9px", // Rounded corner
                 cursor: "pointer", // Pointer cursor for better UX
-                transition: "border-color 0.3s, box-shadow 0.3s", // Transition for focus effect
+                transition: "box-shadow 0.3s ease", // Transition for focus effect
               }}
             >
             <option value="" disabled hidden>
@@ -1712,7 +1770,7 @@ const exportCSV = () => {
                       
                     }}
                   >
-                    Filters
+                    Filter
                     <img src={filtericon} className="external-link-image" style={{ marginLeft: '1px', height: '20px' }} />
                   </button>
                   <div className="row">
@@ -2581,7 +2639,7 @@ const exportCSV = () => {
           marginLeft: '-40px',
           textAlign:'center'
         }}>
-          Please Select at least one filter
+          {errorMessage}
         </p>
       )}
               </div>
@@ -2766,11 +2824,7 @@ const exportCSV = () => {
   </Link>
                               </td>
                             <td>{application.jobTitle}</td>
-                            <td style={{
-                                padding: '0px 10px', // Keep padding for the table cell
-                                textAlign: 'center',  // Center content in the cell
-                                verticalAlign: 'middle', // Align the content vertically in the middle
-                              }}>
+                            <td>
                                 <div style={{
                                   display: 'inline-flex',
                                   justifyContent: 'flex-start',

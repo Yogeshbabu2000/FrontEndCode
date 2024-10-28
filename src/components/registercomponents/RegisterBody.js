@@ -62,8 +62,6 @@ const [employerPasswordError, setEmployerPasswordError] = useState('');
  
  
  
- 
- 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
   };
@@ -283,8 +281,8 @@ const [employerPasswordError, setEmployerPasswordError] = useState('');
     if (!companyName.trim()) {
       return 'Company name is required.';
     }
-    if (!/^[a-zA-Z\s]+$/.test(companyName)) {
-      return 'Please enter a valid company name and should not have any numbers and special char.';
+    if (!/^[a-zA-Z].*$/.test(companyName)) {
+      return 'Company name should not start with a Digits or Special character.';
     }
     if (companyName.trim().length < 3) {
       return 'Company name should be at least three characters long.';
@@ -315,7 +313,10 @@ const [employerPasswordError, setEmployerPasswordError] = useState('');
       'tutanota.com',
     ];
     const domain = email.split('@')[1];
-    if (excludedDomains.includes(domain)) {
+    if (!email.includes('@')) {
+      return 'Please enter a valid email.';
+    }
+    if (!excludedDomains.includes(domain)) {
       return 'Please enter your official email ID.';
     }
     return '';
@@ -400,6 +401,7 @@ const [employerPasswordError, setEmployerPasswordError] = useState('');
   const handleSubmit1 = async (e) => {
    
     if (!isFormValid1()) {
+      console.log(employerEmail)
       return;
     }
  
